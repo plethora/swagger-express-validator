@@ -57,6 +57,7 @@ const resolveResponseModelSchema = (req, res) => {
     const code = res.statusCode || 200;
     if (responseSchemas[code]) {
       schema = responseSchemas[code].schema;
+      if (schema) schema.definitions = options.schema.definitions;
     }
   }
 
@@ -68,16 +69,16 @@ const resolveResponseModelSchema = (req, res) => {
 
 const resolveRequestModelSchema = (req) => {
   const pathObj = matchUrlWithSchema(req.originalUrl);
-  let schema = null;
+  let schema;
   if (pathObj) {
     const method = req.method.toLowerCase();
     let requestSchemas = null;
     if (pathObj[method]) {
       requestSchemas = pathObj[method].parameters;
     }
-    if (requestSchemas && requestSchemas.length > 0) {
-      schema = requestSchemas[0].schema;
-    }
+    const bodySchema = _.find(requestSchemas, reqSchema => reqSchema.schema);
+    schema = _.get(bodySchema, 'schema');
+    if (schema) schema.definitions = options.schema.definitions;
   }
   if (options.allowNullable) {
     schema = decorateWithNullable(schema);
